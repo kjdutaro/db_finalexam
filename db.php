@@ -2,7 +2,7 @@
 $servername = "localhost";
 $username = "root";
 $password = "";
-$dbname = "document_tracking";
+$dbname = "documenttracking";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 
