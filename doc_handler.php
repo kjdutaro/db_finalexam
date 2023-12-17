@@ -5,6 +5,7 @@ include('db.php');
 
 session_start();
 
+//auth
 function authenticateUser($email, $password)
 {
     global $conn;
@@ -27,9 +28,27 @@ function authenticateUser($email, $password)
     }
 }
 
+//outgoing
 
-function sendDocument($recipientEmail, $originOffice, $documentData)
-{
+//upload
+function fileUpload($file){
+    if ($file['error'] === UPLOAD_ERR_OK) {
+
+        $uploadDirectory = './uploads/';
+
+        $uploadedFilePath = $uploadDirectory . uniqid() . '_' . basename($file['name']);
+
+        if (move_uploaded_file($file['tmp_name'], $uploadedFilePath)) {
+            return $uploadedFilePath;
+        } else {
+            return false; 
+        }
+    } else {
+        return false;
+    }
+}
+//to db
+function sendDocument($recipientEmail, $originOffice, $uploadedFilePath){
     global $conn;
 
     $senderId = $_SESSION['user_id'];
@@ -41,8 +60,8 @@ function sendDocument($recipientEmail, $originOffice, $documentData)
         $recipientRow = $recipientResult->fetch_assoc();
         $recipientId = $recipientRow['personnel_id'];
 
-        $insertDocumentQuery = "INSERT INTO Document (filename, data, DateCreated, status, isAccomplished) 
-                                VALUES ('$documentData', NOW(), 'Pending', FALSE)";
+        $insertDocumentQuery = "INSERT INTO Document (file_path, DateCreated, isAccomplished) 
+                                VALUES ('$uploadedFilePath', NOW(), FALSE)";
         $conn->query($insertDocumentQuery);
 
         $documentId = $conn->insert_id;
@@ -65,6 +84,8 @@ function sendDocument($recipientEmail, $originOffice, $documentData)
     }
 }
 
+
+//inbox
 function getInboxDocuments()
 {
     global $conn;
@@ -88,6 +109,8 @@ function getInboxDocuments()
     return $inboxDocuments;
 }
 
+
+//isAccomplished
 function markDocumentAsAccomplished($documentId, $comments)
 {
     global $conn;
@@ -100,6 +123,8 @@ function markDocumentAsAccomplished($documentId, $comments)
     $conn->query($insertAccomplishmentQuery);
 }
 
+
+//outbox
 function getOutboxDocuments()
 {
     global $conn;

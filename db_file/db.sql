@@ -4,8 +4,7 @@ USE DocumentTracking;
 
 CREATE TABLE IF NOT EXISTS Document (
     document_id INT PRIMARY KEY AUTO_INCREMENT,
-    filename VARCHAR(255) NOT NULL,
-    data JSON,
+    file_path VARCHAR(255) NOT NULL,
     DateCreated DATETIME,
     status VARCHAR(1000),
     isAccomplished BOOLEAN DEFAULT FALSE
