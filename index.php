@@ -1,64 +1,60 @@
 <?php
-session_start();
+// Include the document handlers file
+include('doc_handler.php');
 
-if (!isset($_SESSION["user_id"])) {
-    header("Location: login.php");
+// Check if the user is already logged in, redirect to home page if true
+if (isset($_SESSION['user_id'])) {
+    header("Location: ./home.php");
     exit();
 }
 
-include 'functions.php';
+// Check if the form is submitted
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Get user input
+    $email = $_POST['email'];
+    $password = $_POST['password'];
 
-$incomingDocuments = getDocuments();
+    // Call the authenticateUser function
+    if (authenticateUser($email, $password)) {
+        // Redirect to home page
+        header("Location: ./home.php");
+        exit();
+    } else {
+        // Authentication failed
+        $error_message = "Invalid email or password";
+    }
+}
+
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <title>Document Tracking System</title>
+    <link rel="stylesheet" href="./style.css">
+    <title>Login</title>
 </head>
+
 <body>
+    <?php
+    // Display error message if authentication failed
+    if (isset($error_message)) {
+        echo "<p style='color: red;'>$error_message</p>";
+    }
+    ?>
 
-<div class="container">
-    <h2>Welcome to the Document Tracking System</h2>
+    <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
+        <label>Email:</label>
+        <input type="text" name="email" required><br>
 
-    <div class="incoming-documents">
-        <h3>Incoming Documents</h3>
-        <ul>
-            <?php foreach ($incomingDocuments as $document): ?>
-                <li>
-                    <strong>Document ID:</strong> <?= $document["document_id"] ?><br>
-                    <strong>Status:</strong> <?= $document["status_id"] ?><br>
-                    <strong>Content:</strong> <?= $document["content"] ?><br>
-                    <strong>Date Created:</strong> <?= $document["date_created"] ?><br>
-                    <strong>Origin Office:</strong> <?= $document["origin_office"] ?><br>
-                    <strong>Target Recipient:</strong> <?= $document["target_recipient"] ?><br>
-                    <a href='mark_accomplished.php?document_id=<?= $document["document_id"] ?>'>Mark Accomplished</a>
-                </li>
-            <?php endforeach; ?>
-        </ul>
-    </div>
+        <label>Password:</label>
+        <input type="password" name="password" required><br>
 
-    <div class="create-outgoing">
-        <h3>Create Outgoing Document</h3>
-        <form method='post' action='create_outgoing.php' enctype='multipart/form-data'>
-            <label for='origin_office'>Originating Office:</label>
-            <input type='text' name='origin_office' required><br>
-
-            <label for='target_recipient'>Target Recipient:</label>
-            <input type='text' name='target_recipient' required><br>
-
-            <label for='document_file'>Upload Document:</label>
-            <input type='file' name='document_file' required><br>
-
-            <button type='submit'>Create Document</button>
-        </form>
-    </div>
-
-    <p><a href='logout.php'>Logout</a></p>
-</div>
+        <input type="submit" value="Login">
+    </form>
 
 </body>
+
 </html>
