@@ -5,7 +5,7 @@ include('db.php');
 
 session_start();
 
-//auth
+//auth login goods na
 function authenticateUser($email, $password)
 {
     global $conn;
@@ -28,10 +28,26 @@ function authenticateUser($email, $password)
     }
 }
 
-//outgoing
+//logout user
+function logout()
+{
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
+        $_SESSION = array();
+        session_destroy();
+
+        header("Location: index.php");
+        exit();
+    } else {
+        header("Location: index.php");
+        exit();
+    }
+}
+
+//outgoing goods na
 
 //upload
-function fileUpload($file){
+function fileUpload($file)
+{
     if ($file['error'] === UPLOAD_ERR_OK) {
 
         $uploadDirectory = './uploads/';
@@ -41,14 +57,15 @@ function fileUpload($file){
         if (move_uploaded_file($file['tmp_name'], $uploadedFilePath)) {
             return $uploadedFilePath;
         } else {
-            return false; 
+            return false;
         }
     } else {
         return false;
     }
 }
 //to db
-function sendDocument($recipientEmail, $originOffice, $uploadedFilePath){
+function sendDocument($recipientEmail, $originOffice, $uploadedFilePath)
+{
     global $conn;
 
     $senderId = $_SESSION['user_id'];
@@ -85,18 +102,20 @@ function sendDocument($recipientEmail, $originOffice, $uploadedFilePath){
 }
 
 
-//inbox
+//inbox goods na ni
 function getInboxDocuments()
 {
     global $conn;
 
     $userId = $_SESSION['user_id'];
 
-    $inboxQuery = "SELECT Document.document_id, Document.filename, Document.DateCreated, TrackDetails.origin_office 
-                   FROM Document
-                   JOIN TrackDetails ON Document.document_id = TrackDetails.document_id
-                   JOIN Recipient ON TrackDetails.track_id = Recipient.track_id
-                   WHERE Recipient.personnel_id = $userId";
+    $inboxQuery = "SELECT document.document_id, document.DateCreated, document.file_path, personnel.name, trackdetails.origin_office, document.status, document.isAccomplished
+    FROM Document
+	JOIN trackdetails ON document.document_id = trackdetails.document_id
+    JOIN recipient ON trackdetails.track_id = recipient.track_id
+    JOIN sender ON trackdetails.track_id = sender.track_id
+    JOIN personnel ON sender.personnel_id = personnel.personnel_id
+    WHERE recipient.personnel_id = $userId";
 
     $result = $conn->query($inboxQuery);
 
@@ -110,18 +129,8 @@ function getInboxDocuments()
 }
 
 
-//isAccomplished
-function markDocumentAsAccomplished($documentId, $comments)
-{
-    global $conn;
+//status inbox waz pa
 
-    $updateDocumentQuery = "UPDATE Document SET status = 'Accomplished', isAccomplished = TRUE WHERE document_id = $documentId";
-    $conn->query($updateDocumentQuery);
-
-    $insertAccomplishmentQuery = "INSERT INTO Accomplishment (document_id, comments) 
-                                  VALUES ($documentId, '$comments')";
-    $conn->query($insertAccomplishmentQuery);
-}
 
 
 //outbox
@@ -131,13 +140,13 @@ function getOutboxDocuments()
 
     $userId = $_SESSION['user_id'];
 
-    $outboxQuery = "SELECT Document.document_id, Document.filename, Document.DateCreated, Document.status, Document.isAccomplished,
-                    TrackDetails.origin_office, Accomplishment.comments
-                    FROM Document
-                    JOIN TrackDetails ON Document.document_id = TrackDetails.document_id
-                    JOIN Sender ON TrackDetails.track_id = Sender.track_id
-                    LEFT JOIN Accomplishment ON Document.document_id = Accomplishment.document_id
-                    WHERE Sender.personnel_id = $userId";
+    $outboxQuery = "SELECT document.document_id, document.DateCreated, document.file_path, personnel.name, trackdetails.origin_office, document.status, document.isAccomplished
+    FROM Document
+	JOIN trackdetails ON document.document_id = trackdetails.document_id
+    JOIN recipient ON trackdetails.track_id = recipient.track_id
+    JOIN sender ON trackdetails.track_id = sender.track_id
+    JOIN personnel ON recipient.personnel_id = personnel.personnel_id
+    WHERE sender.personnel_id = $userId";
 
     $result = $conn->query($outboxQuery);
 
@@ -149,5 +158,3 @@ function getOutboxDocuments()
 
     return $outboxDocuments;
 }
-
-?>

@@ -1,9 +1,14 @@
 <?php
 include 'doc_handler.php';
 
+//auth
 if (!isset($_SESSION["user_id"])) {
     header("Location: login.php");
     exit();
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
+    logout();
 }
 
 //outgoing
@@ -15,17 +20,17 @@ if (isset($_POST['create_outgoing'])) {
     $uploadedFile = fileUpload($_FILES['document_file']);
 
     if ($uploadedFile == true) {
-        $success = sendDocument($originOffice, $targetRecipient, $uploadedFile);
+        $success = sendDocument($targetRecipient, $originOffice, $uploadedFile);
 
         echo '<script>';
         if ($success) {
             echo 'alert("Document sent successfully!");';
         } else {
-            echo 'alert("Failed to send the document. Please try again. here problemo again ");' ;
+            echo 'alert("Failed to send the document. Please try again.");';
         }
         echo '</script>';
     } else {
-        echo '<script>alert("Failed to upload the document. Please try again. file not uploaded to uploads");</script>';
+        echo '<script>alert("Failed to upload the document. Please try again.");</script>';
     }
 }
 ?>
@@ -43,7 +48,20 @@ if (isset($_POST['create_outgoing'])) {
 <body>
 
     <div class="container">
-        <h2>Welcome to the Document Tracking System</h2>
+        <h2>Welcome, <?php echo $_SESSION['user_name'] ?> </h2>
+
+        <button onclick="openPanel('create-outgoing')">Create Outgoing Document</button>
+        <button onclick="openPanel('incoming-documents')">Inbox</button>
+        <button onclick="openPanel('outbox')">Outbox</button>
+        <section class="lbtn">
+            <form method="post" action="home.php">
+                <input type="hidden" name="logout" value="1">
+                <button type="submit">Logout</button>
+            </form>
+        </section>
+    </div>
+
+    <div>
 
         <!-- Outgoing -->
 
@@ -70,56 +88,78 @@ if (isset($_POST['create_outgoing'])) {
             <h3>Incoming Documents</h3>
 
             <?php
-            $incomingDocuments = getInboxDocuments();
+            $inboxDocuments = getInboxDocuments();
 
-            if (empty($incomingDocuments)) {
+            if (empty($inboxDocuments)) {
                 echo "<p>No documents in your inbox.</p>";
             } else {
-                echo "<ul>";
+                echo "<form method='post' action='doc_handler.php'>";
+                echo "<table border='1'>";
+                foreach ($inboxDocuments as $document) {
+                    echo "<tr>";
+                    echo "<td>{$document['DateCreated']}</td>";
+                    echo "<td><a href='javascript:void(0);' onclick='openDocument(\"{$document['file_path']}\")'>View/Download</a></td>";
+                    echo "<td>{$document['name']}</td>";
+                    echo "<td>{$document['origin_office']}</td>";
+                    echo "<td colspan='2'><input type='text' name='comment[{$document['status']}]' style='width: 100%;'></td>";
 
-                foreach ($incomingDocuments as $document) {
-                    echo "<li>";
-                    echo "<strong>Document ID:</strong> {$document["document_id"]}<br>";
-                    echo "<strong>Status:</strong> {$document["status_id"]}<br>";
-                    echo "<strong>Content:</strong> {$document["content"]}<br>";
-                    echo "<strong>Date Created:</strong> {$document["date_created"]}<br>";
-                    echo "<strong>Origin Office:</strong> {$document["origin_office"]}<br>";
-                    echo "<strong>Target Recipient:</strong> {$document["target_recipient"]}<br>";
-                    echo "<a href='document_tracking.php?mark_accomplished={$document["document_id"]}'>Mark Accomplished</a>";
-                    echo "</li>";
+                    echo "<td><input type='checkbox' name='accomplished[]' value='{$document['isAccomplished']}' id='chk{$document['document_id']}'>";
+                    echo "<label for='chk{$document['document_id']}'> Done</label></td>";
+
+
+                    echo "<td colspan='7'><button type='submit' name='save_comments'>Save Changes</button></td>";
+                    echo "</tr>";
                 }
 
-                echo "</ul>";
+                echo "</table>";
+                echo "</form>";
+
+                // js open docu in browser
+                echo "<script>
+        function openDocument(filePath) {
+            window.open('doc_viewer.php?file=' + encodeURIComponent(filePath), '_blank');
+        }
+    </script>";
             }
             ?>
         </section>
+
 
         <!-- outbox -->
         <section id="outbox">
             <h3>Outbox</h3>
 
             <?php
+
+            $outgoingDocuments = getOutboxDocuments();
+
             if (empty($outgoingDocuments)) {
                 echo "<p>No documents in your outbox.</p>";
             } else {
+                echo "<table border='1'>";
                 foreach ($outgoingDocuments as $document) {
-                    echo "<p>";
-                    echo "Document ID: {$document['document_id']}<br>";
-                    echo "Filename: {$document['filename']}<br>";
-                    echo "Date Created: {$document['DateCreated']}<br>";
-                    echo "Status: {$document['status']}<br>";
-                    echo "Is Accomplished: " . ($document['isAccomplished'] ? 'Yes' : 'No') . "<br>";
-                    echo "Origin Office: {$document['origin_office']}<br>";
-                    echo "Comments: {$document['comments']}<br>";
-                    echo "<a href='#'>View Document</a><br>";
-                    echo "</p>";
+                    echo "<tr>";
+                    echo "<td>{$document['DateCreated']}</td>";
+                    echo "<td><a href='javascript:void(0);' onclick='openDocument(\"{$document['file_path']}\")'>View/Download</a></td>";
+                    echo "<td>{$document['name']}</td>";
+                    echo "<td>{$document['origin_office']}</td>";
+                    echo "<td>{$document['status']}</td>";
+                    echo "<td>" . ($document['isAccomplished'] ? 'Done' : 'Not Done') . "</td>";
+                    echo "</tr>";
                 }
+                echo "</table>";
+
+                // js open docu in browser
+                echo "<script>
+        function openDocument(filePath) {
+            window.open('doc_viewer.php?file=' + encodeURIComponent(filePath), '_blank');
+        }
+    </script>";
             }
             ?>
         </section>
 
 
-        <p><a href='document_tracking.php?logout'>Logout</a></p>
     </div>
 
 </body>
