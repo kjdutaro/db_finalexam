@@ -27,27 +27,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="./style.css">
     <title>Login</title>
 </head>
 
-<body>
-    <?php
-    if (isset($error_message)) {
-        echo "<p style='color: red;'>$error_message</p>";
-    }
-    ?>
+<body class="d-flex align-items-center justify-content-center">
+    <div class="login-container">
+        <?php
+        if (isset($error_message)) {
+            echo "<div class='alert alert-danger'>$error_message</div>";
+        }
+        ?>
 
-    <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
-        <label>Email:</label>
-        <input type="text" name="email" required><br>
+        <h2 class="mb-4">Login</h2>
 
-        <label>Password:</label>
-        <input type="password" name="password" required><br>
+        <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="text" name="email" class="form-control" required>
+            </div>
 
-        <input type="submit" value="Login">
-    </form>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
 
+            <button type="submit" class="btn btn-primary btn-block">Login</button>
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 
 </html>

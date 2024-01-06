@@ -52,7 +52,7 @@ function fileUpload($file)
 
         $uploadDirectory = './uploads/';
 
-        $uploadedFilePath = $uploadDirectory . uniqid() . '_' . basename($file['name']);
+        $uploadedFilePath = uniqid() . '_' . basename($file['name']);
 
         if (move_uploaded_file($file['tmp_name'], $uploadedFilePath)) {
             return $uploadedFilePath;
@@ -64,7 +64,7 @@ function fileUpload($file)
     }
 }
 //to db
-function sendDocument($recipientEmail, $originOffice, $uploadedFilePath)
+function sendDocument($recipientEmail, $originOffice, $uploadedFilePath, $filename)
 {
     global $conn;
 
@@ -77,8 +77,8 @@ function sendDocument($recipientEmail, $originOffice, $uploadedFilePath)
         $recipientRow = $recipientResult->fetch_assoc();
         $recipientId = $recipientRow['personnel_id'];
 
-        $insertDocumentQuery = "INSERT INTO Document (file_path, DateCreated, isAccomplished) 
-                                VALUES ('$uploadedFilePath', NOW(), FALSE)";
+        $insertDocumentQuery = "INSERT INTO Document (file_path, file_name, DateCreated, isAccomplished) 
+                                VALUES ('$uploadedFilePath', '$filename', NOW(), FALSE)";
         $conn->query($insertDocumentQuery);
 
         $documentId = $conn->insert_id;
@@ -109,7 +109,7 @@ function getInboxDocuments()
 
     $userId = $_SESSION['user_id'];
 
-    $inboxQuery = "SELECT document.document_id, document.DateCreated, document.file_path, personnel.name, trackdetails.origin_office, document.status, document.isAccomplished
+    $inboxQuery = "SELECT recipient.track_id, document.document_id, document.DateCreated, document.file_path, document.file_name, personnel.name, trackdetails.origin_office, document.status, document.isAccomplished
     FROM Document
 	JOIN trackdetails ON document.document_id = trackdetails.document_id
     JOIN recipient ON trackdetails.track_id = recipient.track_id
@@ -140,7 +140,7 @@ function getOutboxDocuments()
 
     $userId = $_SESSION['user_id'];
 
-    $outboxQuery = "SELECT document.document_id, document.DateCreated, document.file_path, personnel.name, trackdetails.origin_office, document.status, document.isAccomplished
+    $outboxQuery = "SELECT sender.track_id, document.document_id, document.DateCreated, document.file_path, document.file_name, personnel.name, trackdetails.origin_office, document.status, document.isAccomplished 
     FROM Document
 	JOIN trackdetails ON document.document_id = trackdetails.document_id
     JOIN recipient ON trackdetails.track_id = recipient.track_id
@@ -158,3 +158,5 @@ function getOutboxDocuments()
 
     return $outboxDocuments;
 }
+
+

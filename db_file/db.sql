@@ -5,6 +5,7 @@ USE DocumentTracking;
 CREATE TABLE IF NOT EXISTS Document (
     document_id INT PRIMARY KEY AUTO_INCREMENT,
     file_path VARCHAR(255) NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
     DateCreated DATETIME,
     status VARCHAR(1000),
     isAccomplished BOOLEAN DEFAULT FALSE
@@ -28,7 +29,7 @@ CREATE TABLE IF NOT EXISTS Sender (
    sender_id INT PRIMARY KEY AUTO_INCREMENT, 
    track_id INT NOT NULL,
    personnel_id INT NOT NULL,
-   FOREIGN KEY (track_id) REFERENCES TrackDetails(track_id), 
+   FOREIGN KEY (track_id) REFERENCES TrackDetails(track_id),
    FOREIGN KEY (personnel_id) REFERENCES Personnel(personnel_id)
 );
 
