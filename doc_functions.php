@@ -5,12 +5,11 @@ include('db.php');
 
 session_start();
 
-//auth login goods na
+//auth login
 function authenticateUser($email, $password)
 {
     global $conn;
 
-    // Use prepared statement with parameterized query
     $sql = "SELECT personnel_id, name FROM Personnel WHERE email = ? AND password = ?";
     $stmt = mysqli_prepare($conn, $sql);
 
@@ -52,7 +51,7 @@ function logout()
     }
 }
 
-//outgoing goods na
+//outgoing
 
 //upload
 function fileUpload($file)
@@ -81,91 +80,87 @@ function sendDocument($recipientEmail, $originOffice, $uploadedFilePath, $filena
 
     $senderId = $_SESSION['user_id'];
 
-    // Use prepared statement for recipient query
     $recipientQuery = "SELECT personnel_id FROM Personnel WHERE email = ?";
     $stmtRecipient = mysqli_prepare($conn, $recipientQuery);
 
-    if ($stmtRecipient) {
-        mysqli_stmt_bind_param($stmtRecipient, 's', $recipientEmail);
-        mysqli_stmt_execute($stmtRecipient);
-        $recipientResult = mysqli_stmt_get_result($stmtRecipient);
-
-        if ($recipientResult->num_rows == 1) {
-            $recipientRow = mysqli_fetch_assoc($recipientResult);
-            $recipientId = $recipientRow['personnel_id'];
-
-            // Check if the sender is the same as the recipient
-            if ($senderId == $recipientId) {
-                echo "<script>alert('You cannot send a document to yourself.');</script>";
-                return false;
-                exit;
-            }
-
-            // Use prepared statement for insertDocumentQuery
-            $insertDocumentQuery = "INSERT INTO Document (file_path, file_name, DateCreated, isAccomplished) 
-                                    VALUES (?, ?, NOW(), FALSE)";
-            $stmtDocument = mysqli_prepare($conn, $insertDocumentQuery);
-
-            if ($stmtDocument) {
-                mysqli_stmt_bind_param($stmtDocument, 'ss', $uploadedFilePath, $filename);
-                mysqli_stmt_execute($stmtDocument);
-
-                $documentId = mysqli_insert_id($conn);
-
-                // Use prepared statement for insertTrackDetailsQuery
-                $insertTrackDetailsQuery = "INSERT INTO TrackDetails (document_id, origin_office) 
-                                            VALUES (?, ?)";
-                $stmtTrackDetails = mysqli_prepare($conn, $insertTrackDetailsQuery);
-
-                if ($stmtTrackDetails) {
-                    mysqli_stmt_bind_param($stmtTrackDetails, 'is', $documentId, $originOffice);
-                    mysqli_stmt_execute($stmtTrackDetails);
-
-                    // Use prepared statements for insertSenderQuery and insertRecipientQuery
-                    $insertSenderQuery = "INSERT INTO Sender (track_id, personnel_id) 
-                                            VALUES ((SELECT track_id FROM TrackDetails WHERE document_id = ?), ?)";
-                    $stmtSender = mysqli_prepare($conn, $insertSenderQuery);
-
-                    $insertRecipientQuery = "INSERT INTO Recipient (track_id, personnel_id) 
-                                                VALUES ((SELECT track_id FROM TrackDetails WHERE document_id = ?), ?)";
-                    $stmtRecipient = mysqli_prepare($conn, $insertRecipientQuery);
-
-                    if ($stmtSender && $stmtRecipient) {
-                        mysqli_stmt_bind_param($stmtSender, 'ii', $documentId, $senderId);
-                        mysqli_stmt_bind_param($stmtRecipient, 'ii', $documentId, $recipientId);
-
-                        mysqli_stmt_execute($stmtSender);
-                        mysqli_stmt_execute($stmtRecipient);
-
-                        mysqli_stmt_close($stmtSender);
-                        mysqli_stmt_close($stmtRecipient);
-
-                        echo "<script>alert('Document sent successfully!');</script>";
-                        exit; // or return true;
-                    }
-                }
-            }
-        }
-
-        mysqli_stmt_close($stmtDocument);
-        mysqli_stmt_close($stmtTrackDetails);
-    }else{
-        echo "<script>alert('Failed to send the document. Please try again.');</script>";
+    if (!$stmtRecipient) {
+        echo "<script>alert('Failed to prepare recipient statement.');</script>";
         return false;
     }
 
-    
+    mysqli_stmt_bind_param($stmtRecipient, 's', $recipientEmail);
+    mysqli_stmt_execute($stmtRecipient);
+    $recipientResult = mysqli_stmt_get_result($stmtRecipient);
+
+    if ($recipientResult->num_rows == 1) {
+        $recipientRow = mysqli_fetch_assoc($recipientResult);
+        $recipientId = $recipientRow['personnel_id'];
+
+        if ($senderId == $recipientId) {
+            echo "<script>alert('You cannot send a document to yourself.');</script>";
+            return false;
+        }
+
+        $insertDocumentQuery = "INSERT INTO Document (file_path, file_name, DateCreated, isAccomplished) VALUES (?, ?, NOW(), FALSE)";
+        $stmtDocument = mysqli_prepare($conn, $insertDocumentQuery);
+
+        if (!$stmtDocument) {
+            echo "<script>alert('Failed to prepare document statement.');</script>";
+            return false;
+        }
+
+        mysqli_stmt_bind_param($stmtDocument, 'ss', $uploadedFilePath, $filename);
+        mysqli_stmt_execute($stmtDocument);
+
+        $documentId = mysqli_insert_id($conn);
+
+        $insertTrackDetailsQuery = "INSERT INTO TrackDetails (document_id, origin_office) VALUES (?, ?)";
+        $stmtTrackDetails = mysqli_prepare($conn, $insertTrackDetailsQuery);
+
+        if (!$stmtTrackDetails) {
+            echo "<script>alert('Failed to prepare track details statement.');</script>";
+            return false;
+        }
+
+        mysqli_stmt_bind_param($stmtTrackDetails, 'is', $documentId, $originOffice);
+        mysqli_stmt_execute($stmtTrackDetails);
+
+        $insertSenderQuery = "INSERT INTO Sender (track_id, personnel_id) VALUES ((SELECT track_id FROM TrackDetails WHERE document_id = ?), ?)";
+        $stmtSender = mysqli_prepare($conn, $insertSenderQuery);
+
+        $insertRecipientQuery = "INSERT INTO Recipient (track_id, personnel_id) VALUES ((SELECT track_id FROM TrackDetails WHERE document_id = ?), ?)";
+        $stmtRecipient = mysqli_prepare($conn, $insertRecipientQuery);
+
+        if (!$stmtSender || !$stmtRecipient) {
+            echo "<script>alert('Failed to prepare sender/recipient statement.');</script>";
+            return false;
+        }
+
+        mysqli_stmt_bind_param($stmtSender, 'ii', $documentId, $senderId);
+        mysqli_stmt_bind_param($stmtRecipient, 'ii', $documentId, $recipientId);
+
+        mysqli_stmt_execute($stmtSender);
+        mysqli_stmt_execute($stmtRecipient);
+
+        mysqli_stmt_close($stmtSender);
+        mysqli_stmt_close($stmtRecipient);
+
+        echo "<script>alert('Document sent successfully!');</script>";
+        return true;
+    } else {
+        echo "<script>alert('Recipient not found.');</script>";
+        return false;
+    }
 }
 
 
-//inbox goods na ni
+//inbox
 function getInboxDocuments()
 {
     global $conn;
 
     $userId = $_SESSION['user_id'];
 
-    // Use prepared statement
     $inboxQuery = "SELECT recipient.track_id, document.document_id, document.DateCreated, document.file_path, document.file_name, personnel.name, trackdetails.origin_office, document.status, document.isAccomplished
                     FROM Document
                     JOIN trackdetails ON document.document_id = trackdetails.document_id
