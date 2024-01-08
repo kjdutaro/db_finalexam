@@ -11,21 +11,6 @@ include 'doc_logic.php';
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <title>Document Tracking System</title>
 
-    <script>
-        //for panels
-        function openPanel(panelId) {
-            var panels = document.querySelectorAll('.panel');
-            panels.forEach(function(panel) {
-                panel.style.display = 'none';
-            });
-            var panel = document.getElementById(panelId);
-            panel.style.display = 'block';
-        }
-
-        function confirmDelete() {
-            return confirm('Are you sure you want to delete this document?');
-        }
-    </script>
 </head>
 
 <body>
@@ -115,11 +100,14 @@ include 'doc_logic.php';
                     echo "<td>{$document['name']}</td>";
                     echo "<td>{$document['origin_office']}</td>";
 
-                    echo "<form method='post' action='home.php' onsubmit='return confirmDelete()'>";
+                    echo "<form method='post' action='home.php'>";
                     echo "<td colspan='2'><input type='text' class='form-control' name='comment' style='width: 100%;' value='" . $document['status'] . "'></td>";
                     echo "<td><input type='checkbox' name='done' value='1' " . ($document['isAccomplished'] == 1 ? 'checked' : '') . "></td>";
                     echo "<td style='display:none'><input name='trackid' value='{$document['track_id']}'></td>";
-                    echo "<td colspan='7'><button type='submit' name='save_changes' class='btn btn-sm btn-primary'>Save Changes</button> <button type='submit' name='delete_inbox' class='btn btn-sm btn-danger'>Delete</button></td>";
+                    echo "<td colspan='7'><button type='submit' name='save_changes' class='btn btn-sm btn-primary'>Save Changes</button></form>
+                    <form method='post' action='home.php' onsubmit='return confirmDelete()'>
+                    <input style='display:none' name='trackid' value='{$document['track_id']}'>
+                    <button type='submit' name='delete_inbox' class='btn btn-sm btn-danger'>Delete</button></td>";
                     echo "</form>";
 
 

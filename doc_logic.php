@@ -24,13 +24,6 @@ if (isset($_POST['create_outgoing'])) {
     if ($uploadedFile == true) {
         $success = sendDocument($targetRecipient, $originOffice, $uploadedFile, $filename);
 
-        echo '<script>';
-        if ($success) {
-            echo 'alert("Document sent successfully!");';
-        } else {
-            echo 'alert("Failed to send the document. Please try again.");';
-        }
-        echo '</script>';
     } else {
         echo '<script>alert("Failed to upload the document. Please try again.");</script>';
     }
@@ -119,6 +112,20 @@ if (isset($_POST['delete_outbox'])) {
     delete('sender', $trackId);
 }
 
-
-
 ?>
+
+    <script>
+        //for panels
+        function openPanel(panelId) {
+            var panels = document.querySelectorAll('.panel');
+            panels.forEach(function(panel) {
+                panel.style.display = 'none';
+            });
+            var panel = document.getElementById(panelId);
+            panel.style.display = 'block';
+        }
+
+        function confirmDelete() {
+            return confirm('Are you sure you want to delete this document?');
+        }
+    </script>
